@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Switch } from 'react-native';
+import { View, StyleSheet, Switch, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAppTheme, Typography, Card, Button } from '../ui';
 import { useThemeStore } from '../core/themeStore';
@@ -14,7 +14,7 @@ export default function Settings() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <Button 
           title="Back" 
@@ -65,19 +65,35 @@ export default function Settings() {
           />
         </View>
       </Card>
+
+      <View style={{ marginTop: 24 }}>
+        <Typography variant="h2" style={{ marginBottom: 16 }}>Developer</Typography>
+        <Card style={styles.card}>
+          <View style={styles.row}>
+            <Typography variant="body" weight="bold">Show Perf Monitor</Typography>
+            <Switch 
+              value={store.isPerformanceMonitorVisible} 
+              onValueChange={store.setPerformanceMonitorVisible} 
+              trackColor={{ true: colors.accent }}
+            />
+          </View>
+        </Card>
+      </View>
       
       <View style={styles.oss}>
          <Typography variant="caption" color={colors.textSecondary} align="center">
            Pockade is Open Source under the Apache 2.0 License.
          </Typography>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  content: {
     padding: 24,
     paddingTop: 64,
   },
@@ -103,5 +119,6 @@ const styles = StyleSheet.create({
   oss: {
     marginTop: 32,
     alignItems: 'center',
+    paddingBottom: 40,
   }
 });

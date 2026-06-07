@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Slot } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useAppTheme, BitMascot, Typography } from '../ui';
+import { useAppTheme, BitMascot, Typography, PerformanceMonitor } from '../ui';
 import { initializeDatabase } from '../core/database';
 
 SplashScreen.preventAutoHideAsync();
@@ -42,6 +42,7 @@ export default function RootLayout() {
   return (
     <View style={[{ flex: 1, backgroundColor: colors.background }]}>
       <Slot />
+      <PerformanceMonitor />
     </View>
   );
 }
