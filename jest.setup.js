@@ -89,25 +89,22 @@ jest.mock('expo-screen-orientation', () => ({
   },
 }));
 
-jest.mock('expo-av', () => ({
-  Audio: {
+jest.mock('expo-audio', () => {
+  const createMockPlayer = () => ({
+    play: jest.fn().mockResolvedValue(),
+    pause: jest.fn().mockResolvedValue(),
+    stop: jest.fn().mockResolvedValue(),
+    seekTo: jest.fn().mockResolvedValue(),
+    release: jest.fn().mockResolvedValue(),
+    loop: false,
+    volume: 1.0,
+  });
+
+  return {
     setAudioModeAsync: jest.fn().mockResolvedValue(),
-    Sound: {
-      createAsync: jest.fn().mockResolvedValue({
-        sound: {
-          replayAsync: jest.fn().mockResolvedValue(),
-          playAsync: jest.fn().mockResolvedValue(),
-          pauseAsync: jest.fn().mockResolvedValue(),
-          stopAsync: jest.fn().mockResolvedValue(),
-          unloadAsync: jest.fn().mockResolvedValue(),
-          getStatusAsync: jest.fn().mockResolvedValue({ isLoaded: true, isPlaying: true }),
-        }
-      })
-    }
-  },
-  InterruptionModeIOS: { DuckOthers: 1 },
-  InterruptionModeAndroid: { DuckOthers: 1 },
-}));
+    createAudioPlayer: jest.fn().mockImplementation(() => createMockPlayer()),
+  };
+});
 
 jest.mock('expo-haptics', () => ({
   selectionAsync: jest.fn().mockResolvedValue(),

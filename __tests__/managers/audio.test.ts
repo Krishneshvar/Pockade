@@ -1,4 +1,4 @@
-import { Audio } from 'expo-av';
+import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import { AudioEngine } from '../../src/managers/audio';
 import { useThemeStore } from '../../src/core/themeStore';
 
@@ -11,51 +11,54 @@ describe('AudioEngine', () => {
 
   it('initializes the audio mode with ducking', async () => {
     await AudioEngine.initialize();
-    expect(Audio.setAudioModeAsync).toHaveBeenCalledWith(
+    expect(setAudioModeAsync).toHaveBeenCalledWith(
       expect.objectContaining({
-        shouldDuckAndroid: true,
-        staysActiveInBackground: false,
+        playsInSilentMode: true,
+        interruptionMode: 'duckOthers',
       })
     );
   });
 
   it('preloads and plays SFX', async () => {
     await AudioEngine.preloadSFX('bell', 'dummy-source.mp3');
-    expect(Audio.Sound.createAsync).toHaveBeenCalledWith('dummy-source.mp3');
+    expect(createAudioPlayer).toHaveBeenCalledWith('dummy-source.mp3');
 
-    const soundMock = (await Audio.Sound.createAsync.mock.results[0].value).sound;
+    const playerMock = (createAudioPlayer as jest.Mock).mock.results[0].value;
 
     await AudioEngine.playSFX('bell');
-    expect(soundMock.replayAsync).toHaveBeenCalled();
+    expect(playerMock.seekTo).toHaveBeenCalledWith(0);
+    expect(playerMock.play).toHaveBeenCalled();
   });
 
   it('does not play SFX if sfxEnabled is false', async () => {
     useThemeStore.setState({ sfxEnabled: false });
     await AudioEngine.preloadSFX('bell', 'dummy-source.mp3');
     
-    const soundMock = (await Audio.Sound.createAsync.mock.results[0].value).sound;
+    const playerMock = (createAudioPlayer as jest.Mock).mock.results[0].value;
     await AudioEngine.playSFX('bell');
-    expect(soundMock.replayAsync).not.toHaveBeenCalled();
+    expect(playerMock.play).not.toHaveBeenCalled();
   });
 
   it('plays BGM and stops previous BGM', async () => {
     await AudioEngine.playBGM('theme', 'theme-source.mp3');
-    expect(Audio.Sound.createAsync).toHaveBeenCalledWith('theme-source.mp3', expect.objectContaining({ isLooping: true }));
+    expect(createAudioPlayer).toHaveBeenCalledWith('theme-source.mp3');
 
-    const soundMock = (await Audio.Sound.createAsync.mock.results[0].value).sound;
-    
+    const firstPlayerMock = (createAudioPlayer as jest.Mock).mock.results[0].value;
+    expect(firstPlayerMock.loop).toBe(true);
+    expect(firstPlayerMock.play).toHaveBeenCalled();
+
     await AudioEngine.playBGM('battle', 'battle-source.mp3');
-    expect(soundMock.stopAsync).toHaveBeenCalled();
-    expect(soundMock.unloadAsync).toHaveBeenCalled();
+    expect(firstPlayerMock.stop).toHaveBeenCalled();
+    expect(firstPlayerMock.release).toHaveBeenCalled();
   });
 
   it('pauses BGM when audio is disabled dynamically', async () => {
     await AudioEngine.playBGM('theme', 'theme-source.mp3');
-    const soundMock = (await Audio.Sound.createAsync.mock.results[0].value).sound;
+    const playerMock = (createAudioPlayer as jest.Mock).mock.results[0].value;
 
     useThemeStore.setState({ audioEnabled: false });
     // Theme subscription should trigger pauseBGM
     await Promise.resolve(); // flush microtasks
-    expect(soundMock.pauseAsync).toHaveBeenCalled();
+    expect(playerMock.pause).toHaveBeenCalled();
   });
 });

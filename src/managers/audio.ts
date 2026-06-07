@@ -1,11 +1,22 @@
-import { Audio, InterruptionModeAndroid, InterruptionModeIOS } from 'expo-av';
+import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import { useThemeStore } from '../core/themeStore';
 import { Logger } from '../core/logger';
 
+// Define localized type interface for expo-audio AudioPlayer instance
+interface AudioPlayerInstance {
+  play(): void;
+  pause(): void;
+  stop(): void;
+  seekTo(position: number): Promise<void>;
+  release(): void;
+  loop: boolean;
+  volume: number;
+}
+
 class AudioEngineClass {
   private isInitialized = false;
-  private sfxPool = new Map<string, Audio.Sound>();
-  private bgm: { key: string; sound: Audio.Sound } | null = null;
+  private sfxPool = new Map<string, AudioPlayerInstance>();
+  private bgm: { key: string; player: AudioPlayerInstance } | null = null;
   private unsubscribeTheme: (() => void) | null = null;
 
   async initialize() {
@@ -14,12 +25,9 @@ class AudioEngineClass {
     }
 
     try {
-      await Audio.setAudioModeAsync({
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: false,
-        interruptionModeIOS: InterruptionModeIOS.DuckOthers,
-        interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
-        shouldDuckAndroid: true,
+      await setAudioModeAsync({
+        playsInSilentMode: true,
+        interruptionMode: 'duckOthers',
       });
 
       // Subscribe to theme store to dynamically pause/resume audio if settings change
@@ -44,8 +52,8 @@ class AudioEngineClass {
     }
 
     try {
-      const { sound } = await Audio.Sound.createAsync(source);
-      this.sfxPool.set(key, sound);
+      const player = createAudioPlayer(source) as unknown as AudioPlayerInstance;
+      this.sfxPool.set(key, player);
     } catch (error) {
       await Logger.error(`Failed to preload SFX: ${key}`, { error: String(error) });
     }
@@ -60,14 +68,15 @@ class AudioEngineClass {
       await this.initialize();
     }
 
-    const sound = this.sfxPool.get(key);
-    if (!sound) {
+    const player = this.sfxPool.get(key);
+    if (!player) {
       await Logger.warn(`SFX not preloaded: ${key}`);
       return;
     }
 
     try {
-      await sound.replayAsync();
+      await player.seekTo(0);
+      player.play();
     } catch (error) {
       await Logger.warn(`Failed to play SFX: ${key}`, { error: String(error) });
     }
@@ -89,42 +98,38 @@ class AudioEngineClass {
     await this.stopBGM();
 
     try {
-      const { sound } = await Audio.Sound.createAsync(source, {
-        isLooping: true,
-        shouldPlay: useThemeStore.getState().audioEnabled,
-      });
+      const player = createAudioPlayer(source) as unknown as AudioPlayerInstance;
+      player.loop = true;
       
-      this.bgm = { key, sound };
+      if (useThemeStore.getState().audioEnabled) {
+        player.play();
+      }
+      
+      this.bgm = { key, player };
     } catch (error) {
       await Logger.error(`Failed to load BGM: ${key}`, { error: String(error) });
     }
   }
 
   async pauseBGM() {
-    if (this.bgm?.sound) {
-      const status = await this.bgm.sound.getStatusAsync();
-      if (status.isLoaded && status.isPlaying) {
-        await this.bgm.sound.pauseAsync();
-      }
+    if (this.bgm?.player) {
+      this.bgm.player.pause();
     }
   }
 
   async resumeBGM() {
-    if (this.bgm?.sound && useThemeStore.getState().audioEnabled) {
-      const status = await this.bgm.sound.getStatusAsync();
-      if (status.isLoaded && !status.isPlaying) {
-        await this.bgm.sound.playAsync();
-      }
+    if (this.bgm?.player && useThemeStore.getState().audioEnabled) {
+      this.bgm.player.play();
     }
   }
 
   async stopBGM() {
-    if (this.bgm?.sound) {
+    if (this.bgm?.player) {
       try {
-        await this.bgm.sound.stopAsync();
-        await this.bgm.sound.unloadAsync();
+        this.bgm.player.stop();
+        this.bgm.player.release();
       } catch (e) {
-        await Logger.warn('Failed to stop/unload old BGM', { error: String(e) });
+        await Logger.warn('Failed to stop/release old BGM', { error: String(e) });
       }
       this.bgm = null;
     }
@@ -133,10 +138,13 @@ class AudioEngineClass {
   async unloadAll() {
     await this.stopBGM();
 
-    const unloadPromises = Array.from(this.sfxPool.values()).map((sound) =>
-      sound.unloadAsync().catch(() => undefined)
-    );
-    await Promise.all(unloadPromises);
+    for (const player of this.sfxPool.values()) {
+      try {
+        player.release();
+      } catch (e) {
+        // ignore errors during cleanup
+      }
+    }
     this.sfxPool.clear();
 
     if (this.unsubscribeTheme) {
