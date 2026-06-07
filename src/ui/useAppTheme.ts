@@ -4,17 +4,20 @@ import { colors } from './colors';
 
 export const useAppTheme = () => {
   const systemColorScheme = useColorScheme();
-  const { theme } = useThemeStore();
+  const { theme, colorBlindMode } = useThemeStore();
+  const activeTheme = theme === 'system'
+    ? systemColorScheme === 'dark'
+      ? 'dark'
+      : 'light'
+    : theme;
 
-  const activeTheme = theme === 'system' ? (systemColorScheme || 'light') : theme;
-  
   return {
     activeTheme,
     colors: {
-      primary: colors.primary,
-      secondary: colors.secondary,
-      accent: colors.accent,
+      primary: colorBlindMode === 'off' ? colors.primary : colors.colorBlind.primary,
+      secondary: colorBlindMode === 'off' ? colors.secondary : colors.colorBlind.secondary,
+      accent: colorBlindMode === 'off' ? colors.accent : colors.colorBlind.accent,
       ...colors[activeTheme],
-    }
+    },
   };
 };

@@ -1,39 +1,78 @@
-import * as KeepAwake from 'expo-keep-awake';
 import * as Battery from 'expo-battery';
+import * as KeepAwake from 'expo-keep-awake';
+
+export interface PowerSnapshot {
+  batteryLevel: number | null;
+  batteryState: Battery.BatteryState | null;
+  lowPowerMode: boolean;
+  shouldThrottleAnimations: boolean;
+}
 
 class PowerManagerClass {
   private wakeLockActive = false;
 
-  public enableWakeLock() {
+  enableWakeLock() {
     if (!this.wakeLockActive) {
-      KeepAwake.activateKeepAwakeAsync('game-session').catch(() => {});
+      KeepAwake.activateKeepAwakeAsync('game-session').catch(() => undefined);
       this.wakeLockActive = true;
     }
   }
 
-  public disableWakeLock() {
+  disableWakeLock() {
     if (this.wakeLockActive) {
-      KeepAwake.deactivateKeepAwake('game-session').catch(() => {});
+      KeepAwake.deactivateKeepAwake('game-session').catch(() => undefined);
       this.wakeLockActive = false;
     }
   }
 
-  public async isLowBattery(): Promise<boolean> {
-    try {
-      const level = await Battery.getBatteryLevelAsync();
-      const state = await Battery.getBatteryStateAsync();
-      // If below 20% and not charging
-      return level > 0 && level <= 0.2 && state !== Battery.BatteryState.CHARGING;
-    } catch (e) {
-      return false;
-    }
+  async getSnapshot(): Promise<PowerSnapshot> {
+    const [batteryLevel, batteryState, lowPowerMode] = await Promise.all([
+      Battery.getBatteryLevelAsync().catch(() => null),
+      Battery.getBatteryStateAsync().catch(() => null),
+      Battery.isLowPowerModeEnabledAsync().catch(() => false),
+    ]);
+
+    const isLowBattery =
+      typeof batteryLevel === 'number' &&
+      batteryLevel > 0 &&
+      batteryLevel <= 0.2 &&
+      batteryState !== Battery.BatteryState.CHARGING;
+
+    return {
+      batteryLevel,
+      batteryState,
+      lowPowerMode,
+      shouldThrottleAnimations: isLowBattery || lowPowerMode,
+    };
   }
 
-  public async shouldThrottleAnimations(): Promise<boolean> {
-    // Check battery level; OS thermal state checking would need a native module like react-native-device-info
-    const lowBattery = await this.isLowBattery();
-    const powerSaveMode = await Battery.isLowPowerModeEnabledAsync().catch(() => false);
-    return lowBattery || powerSaveMode;
+  async shouldThrottleAnimations() {
+    const snapshot = await this.getSnapshot();
+    return snapshot.shouldThrottleAnimations;
+  }
+
+  observe(callback: (snapshot: PowerSnapshot) => void) {
+    const notify = async () => {
+      callback(await this.getSnapshot());
+    };
+
+    const levelListener = Battery.addBatteryLevelListener(() => {
+      void notify();
+    });
+    const stateListener = Battery.addBatteryStateListener(() => {
+      void notify();
+    });
+    const powerModeListener = Battery.addLowPowerModeListener(() => {
+      void notify();
+    });
+
+    void notify();
+
+    return () => {
+      levelListener.remove();
+      stateListener.remove();
+      powerModeListener.remove();
+    };
   }
 }
 

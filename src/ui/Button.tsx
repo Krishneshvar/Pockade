@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, ViewStyle, LayoutChangeEvent } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
-import { Canvas, RoundedRect, Shadow, InnerShadow } from '@shopify/react-native-skia';
+import { Canvas, RoundedRect, Shadow } from '@shopify/react-native-skia';
 import { useAppTheme } from './useAppTheme';
 import { Typography } from './Typography';
 
@@ -38,6 +38,7 @@ export const Button: React.FC<ButtonProps> = ({ title, onPress, variant = 'prima
 
   return (
     <AnimatedPressable 
+      accessibilityRole="button"
       onPress={onPress} 
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
@@ -49,8 +50,6 @@ export const Button: React.FC<ButtonProps> = ({ title, onPress, variant = 'prima
           <RoundedRect x={0} y={0} width={dimensions.width} height={dimensions.height} r={dimensions.height / 2} color={bgColor}>
             <Shadow dx={4} dy={4} blur={8} color={isDark ? '#00000060' : '#00000030'} />
             <Shadow dx={-4} dy={-4} blur={8} color={isDark ? '#ffffff10' : '#ffffffA0'} />
-            <InnerShadow dx={2} dy={2} blur={4} color="#ffffff60" />
-            <InnerShadow dx={-2} dy={-2} blur={4} color="#00000020" />
           </RoundedRect>
         </Canvas>
       )}

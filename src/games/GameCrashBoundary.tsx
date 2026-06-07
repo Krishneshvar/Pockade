@@ -2,6 +2,7 @@ import React, { Component, ErrorInfo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Typography, Button, BitMascot, useAppTheme } from '../ui';
 import { SkiaGarbageCollector } from '../core/gc';
+import { Logger } from '../core/logger';
 
 interface Props {
   children: React.ReactNode;
@@ -24,17 +25,21 @@ export class GameCrashBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Attempt to flush memory aggressively to prevent OS shell crash
     SkiaGarbageCollector.flush();
     console.error('Game Module Crashed:', error, errorInfo);
+    void Logger.error('Game module crashed', {
+      message: error.message,
+      stack: error.stack,
+      componentStack: errorInfo.componentStack,
+    });
   }
 
   render() {
     if (this.state.hasError) {
       return (
-        <BoundaryFallback 
-          onReturn={this.props.onReturnToDashboard} 
-          errorMsg={this.state.errorMsg} 
+        <BoundaryFallback
+          onReturn={this.props.onReturnToDashboard}
+          errorMsg={this.state.errorMsg}
         />
       );
     }
@@ -42,15 +47,21 @@ export class GameCrashBoundary extends Component<Props, State> {
   }
 }
 
-const BoundaryFallback: React.FC<{ onReturn: () => void, errorMsg: string }> = ({ onReturn, errorMsg }) => {
+const BoundaryFallback: React.FC<{ onReturn: () => void; errorMsg: string }> = ({
+  onReturn,
+  errorMsg,
+}) => {
   const { colors } = useAppTheme();
-  
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <BitMascot size={150} emotion="sad" />
       <Typography variant="h2" style={styles.title}>Oops! The Game Crashed.</Typography>
       <Typography variant="body" color={colors.textSecondary} align="center" style={styles.subtitle}>
         A procedurally generated anomaly caused this game instance to fail. Bit is very sorry!
+      </Typography>
+      <Typography variant="caption" color={colors.textSecondary} align="center" style={styles.subtitle}>
+        {errorMsg}
       </Typography>
       <Button title="Return to Dashboard" onPress={onReturn} />
     </View>
@@ -69,6 +80,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   subtitle: {
-    marginBottom: 32,
-  }
+    marginBottom: 16,
+  },
 });

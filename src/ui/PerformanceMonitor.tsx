@@ -1,24 +1,32 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
+import * as Device from 'expo-device';
 import { useThemeStore } from '../core/themeStore';
 import { useAppTheme } from './useAppTheme';
+import { PowerManager } from '../managers/power';
 
-const useFPS = () => {
-  const [fps, setFps] = useState(60);
+const useFrameMetrics = () => {
+  const [metrics, setMetrics] = useState({ fps: 60, frameMs: 16.7 });
   
   useEffect(() => {
     let lastFrameTime = performance.now();
     let frameCount = 0;
+    let frameDurationTotal = 0;
     let animationFrameId: number;
 
     const loop = () => {
       const now = performance.now();
+      frameDurationTotal += now - lastFrameTime;
       frameCount++;
-      if (now - lastFrameTime >= 1000) {
-        setFps(Math.round((frameCount * 1000) / (now - lastFrameTime)));
+      if (frameDurationTotal >= 1000) {
+        setMetrics({
+          fps: Math.round((frameCount * 1000) / frameDurationTotal),
+          frameMs: Number((frameDurationTotal / frameCount).toFixed(1)),
+        });
         frameCount = 0;
-        lastFrameTime = now;
+        frameDurationTotal = 0;
       }
+      lastFrameTime = now;
       animationFrameId = requestAnimationFrame(loop);
     };
 
@@ -26,20 +34,40 @@ const useFPS = () => {
     return () => cancelAnimationFrame(animationFrameId);
   }, []);
 
-  return fps;
+  return metrics;
 };
 
 export const PerformanceMonitor: React.FC = () => {
   const { isPerformanceMonitorVisible } = useThemeStore();
   const { colors } = useAppTheme();
-  const fps = useFPS();
+  const { fps, frameMs } = useFrameMetrics();
+  const [maxMemoryMb, setMaxMemoryMb] = useState<number | null>(null);
+  const [throttled, setThrottled] = useState(false);
 
-  if (!isPerformanceMonitorVisible) return null;
+  useEffect(() => {
+    if (!__DEV__ || !isPerformanceMonitorVisible) {
+      return;
+    }
+
+    Device.getMaxMemoryAsync?.()
+      .then((value) => {
+        setMaxMemoryMb(Math.round(value / 1024 / 1024));
+      })
+      .catch(() => {
+        setMaxMemoryMb(null);
+      });
+
+    return PowerManager.observe((snapshot) => {
+      setThrottled(snapshot.shouldThrottleAnimations);
+    });
+  }, [isPerformanceMonitorVisible]);
+
+  if (!__DEV__ || !isPerformanceMonitorVisible) return null;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]} pointerEvents="none">
       <Text style={{ color: colors.text, fontSize: 10, fontFamily: 'monospace', fontWeight: 'bold' }}>
-        FPS: {fps}
+        {`FPS ${fps} | ${frameMs}ms | MEM ${maxMemoryMb ?? '--'}MB | THR ${throttled ? 'ON' : 'OFF'}`}
       </Text>
     </View>
   );

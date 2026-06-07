@@ -1,27 +1,47 @@
 import * as ScreenOrientation from 'expo-screen-orientation';
 
+export type OrientationPreference = 'portrait' | 'landscape' | 'any';
+
 export const OrientationManager = {
-  lockPortrait: async () => {
+  async lockPortrait() {
     try {
       await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
-    } catch (e) {
-      console.warn('Failed to lock portrait orientation', e);
+    } catch (error) {
+      console.warn('Failed to lock portrait orientation', error);
     }
   },
-  
-  lockLandscape: async () => {
+
+  async lockLandscape() {
     try {
       await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
-    } catch (e) {
-      console.warn('Failed to lock landscape orientation', e);
+    } catch (error) {
+      console.warn('Failed to lock landscape orientation', error);
     }
   },
-  
-  unlockAll: async () => {
+
+  async unlockAll() {
     try {
       await ScreenOrientation.unlockAsync();
-    } catch (e) {
-      console.warn('Failed to unlock orientation', e);
+    } catch (error) {
+      console.warn('Failed to unlock orientation', error);
     }
-  }
+  },
+
+  async lockForPreference(preference: OrientationPreference) {
+    if (preference === 'landscape') {
+      await OrientationManager.lockLandscape();
+      return;
+    }
+
+    if (preference === 'portrait') {
+      await OrientationManager.lockPortrait();
+      return;
+    }
+
+    await OrientationManager.unlockAll();
+  },
+
+  async resetToShellDefault() {
+    await OrientationManager.lockPortrait();
+  },
 };

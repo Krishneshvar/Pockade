@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">87.5% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/8</span>
+                <span class='fraction'>7/8</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">14.28% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/7</span>
+                <span class='fraction'>1/7</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">50% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/2</span>
+                <span class='fraction'>1/2</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">87.5% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/8</span>
+                <span class='fraction'>7/8</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -122,24 +122,19 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -151,7 +146,12 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -171,22 +171,22 @@ interface CardProps {
   style?: ViewStyle;
 }
 &nbsp;
-export const Card: React.FC&lt;CardProps&gt; = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >({</span> children, style }) =&gt; {</span>
-  const { colors, activeTheme } = <span class="cstat-no" title="statement not covered" >useAppTheme();</span>
-  const [dimensions, setDimensions] = <span class="cstat-no" title="statement not covered" >useState({ width: 0, height: 0 });</span>
-  const isDark = <span class="cstat-no" title="statement not covered" >activeTheme === 'dark';</span>
+export const Card: React.FC&lt;CardProps&gt; = ({ children, style }) =&gt; {
+  const { colors, activeTheme } = useAppTheme();
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  const isDark = activeTheme === 'dark';
 &nbsp;
-  const onLayout = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(e</span>vent: LayoutChangeEvent) =&gt; {</span>
+  const onLayout = <span class="fstat-no" title="function not covered" >(e</span>vent: LayoutChangeEvent) =&gt; {
 <span class="cstat-no" title="statement not covered" >    setDimensions({</span>
       width: event.nativeEvent.layout.width,
       height: event.nativeEvent.layout.height,
     });
   };
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  return (</span>
+  return (
     &lt;View onLayout={onLayout} style={[styles.container, style]}&gt;
-      {dimensions.width &gt; 0 &amp;&amp; dimensions.height &gt; 0 &amp;&amp; (
-        &lt;Canvas style={StyleSheet.absoluteFill}&gt;
+      {dimensions.width &gt; 0 &amp;&amp; <span class="branch-1 cbranch-no" title="branch not covered" >dimensions.height &gt; 0 </span>&amp;&amp; (
+<span class="branch-2 cbranch-no" title="branch not covered" >        &lt;Canvas style={StyleSheet.absoluteFill}&gt;</span>
           &lt;RoundedRect x={0} y={0} width={dimensions.width} height={dimensions.height} r={24} color={colors.surface}&gt;
             &lt;Shadow dx={6} dy={6} blur={12} color={isDark ? '#00000080' : '#00000020'} /&gt;
             &lt;Shadow dx={-6} dy={-6} blur={12} color={isDark ? '#ffffff05' : '#ffffff'} /&gt;
@@ -200,7 +200,7 @@ export const Card: React.FC&lt;CardProps&gt; = <span class="cstat-no" title="sta
   );
 };
 &nbsp;
-const styles = <span class="cstat-no" title="statement not covered" >StyleSheet.create({</span>
+const styles = StyleSheet.create({
   container: {
     borderRadius: 24,
     minHeight: 100,
@@ -217,7 +217,7 @@ const styles = <span class="cstat-no" title="statement not covered" >StyleSheet.
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-06-07T06:54:53.161Z
+                at 2026-06-07T16:53:01.493Z
             </div>
         <script src="../prettify.js"></script>
         <script>

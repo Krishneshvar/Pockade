@@ -2,15 +2,21 @@
   "expo": {
     "name": "Pockade",
     "slug": "Pockade",
+    "owner": "krishneshvar",
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "pockade",
     "userInterfaceStyle": "automatic",
     "ios": {
+      "bundleIdentifier": "com.krish.pockage",
       "icon": "./assets/expo.icon"
     },
     "android": {
+      "package": "com.krish.pockage",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -35,7 +41,9 @@
           }
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-notifications",
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true,
@@ -46,6 +54,9 @@
       "eas": {
         "projectId": "e8cf1df2-920b-49b4-be57-fa1d79e57d71"
       }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/e8cf1df2-920b-49b4-be57-fa1d79e57d71"
     }
   }
 }

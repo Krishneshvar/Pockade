@@ -15,7 +15,11 @@ describe('SecurityManager', () => {
       
       expect(key).toBe('mocked-uuid');
       expect(Crypto.randomUUID).toHaveBeenCalled();
-      expect(SecureStore.setItemAsync).toHaveBeenCalledWith('pockade_salt_key', 'mocked-uuid');
+      expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
+        'pockade_salt_key',
+        'mocked-uuid',
+        { requireAuthentication: false }
+      );
     });
 
     it('should return existing key if one exists', async () => {
@@ -38,7 +42,7 @@ describe('SecurityManager', () => {
       expect(hash).toBe('mocked-hash');
       expect(Crypto.digestStringAsync).toHaveBeenCalledWith(
         'SHA256',
-        'my-score-payload:test-salt'
+        'default:my-score-payload:test-salt'
       );
     });
 
@@ -65,6 +69,18 @@ describe('SecurityManager', () => {
       
       const recovered = SecurityManager.deobfuscateMemoryValue(obfuscated);
       expect(recovered).toBe(originalScore);
+    });
+  });
+
+  describe('Backup payload encryption', () => {
+    it('encrypts and decrypts backup payloads', async () => {
+      (SecureStore.getItemAsync as jest.Mock).mockResolvedValue('backup-key');
+
+      const encrypted = await SecurityManager.encryptBackupPayload('hello-world');
+      const decrypted = await SecurityManager.decryptBackupPayload(encrypted);
+
+      expect(encrypted.ciphertext).not.toBe('hello-world');
+      expect(decrypted).toBe('hello-world');
     });
   });
 });

@@ -23,6 +23,7 @@ jest.mock('@shopify/react-native-skia', () => {
     Path: (props) => React.createElement(View, { testID: 'skia-path', ...props }, props.children),
     RoundedRect: (props) => React.createElement(View, { testID: 'skia-rounded-rect', ...props }, props.children),
     Circle: (props) => React.createElement(View, { testID: 'skia-circle', ...props }, props.children),
+    Shadow: (props) => React.createElement(View, { testID: 'skia-shadow', ...props }, props.children),
     BackdropBlur: (props) => React.createElement(View, { testID: 'skia-backdrop-blur', ...props }, props.children),
     Fill: (props) => React.createElement(View, { testID: 'skia-fill', ...props }, props.children),
     vec: jest.fn((x, y) => ({ x, y })),
@@ -35,7 +36,7 @@ jest.mock('@shopify/react-native-skia', () => {
 // MMKV Mock
 jest.mock('react-native-mmkv', () => {
   return {
-    MMKV: jest.fn().mockImplementation(() => ({
+    createMMKV: jest.fn().mockImplementation(() => ({
       set: jest.fn(),
       getString: jest.fn(),
       getNumber: jest.fn(),
@@ -51,10 +52,16 @@ jest.mock('react-native-mmkv', () => {
 // OP-SQLite Mock
 jest.mock('@op-engineering/op-sqlite', () => ({
   open: jest.fn().mockReturnValue({
-    execute: jest.fn(),
+    execute: jest.fn().mockResolvedValue({ rows: [], rowsAffected: 0 }),
     executeAsync: jest.fn(),
-    transaction: jest.fn(),
+    transaction: jest.fn(async (callback) => {
+      await callback({
+        execute: jest.fn().mockResolvedValue({ rows: [], rowsAffected: 0 }),
+      });
+    }),
     close: jest.fn(),
+    closeAsync: jest.fn().mockResolvedValue(),
+    getDbPath: jest.fn(() => 'file:///mock/doc/dir/pockade.sqlite'),
   }),
 }));
 
@@ -84,7 +91,19 @@ jest.mock('expo-screen-orientation', () => ({
 
 jest.mock('expo-av', () => ({
   Audio: {
-    setAudioModeAsync: jest.fn(),
+    setAudioModeAsync: jest.fn().mockResolvedValue(),
+    Sound: {
+      createAsync: jest.fn().mockResolvedValue({
+        sound: {
+          replayAsync: jest.fn().mockResolvedValue(),
+          playAsync: jest.fn().mockResolvedValue(),
+          pauseAsync: jest.fn().mockResolvedValue(),
+          stopAsync: jest.fn().mockResolvedValue(),
+          unloadAsync: jest.fn().mockResolvedValue(),
+          getStatusAsync: jest.fn().mockResolvedValue({ isLoaded: true, isPlaying: true }),
+        }
+      })
+    }
   },
   InterruptionModeIOS: { DuckOthers: 1 },
   InterruptionModeAndroid: { DuckOthers: 1 },
@@ -102,6 +121,9 @@ jest.mock('expo-battery', () => ({
   getBatteryLevelAsync: jest.fn().mockResolvedValue(1),
   getBatteryStateAsync: jest.fn().mockResolvedValue(1),
   isLowPowerModeEnabledAsync: jest.fn().mockResolvedValue(false),
+  addBatteryLevelListener: jest.fn(() => ({ remove: jest.fn() })),
+  addBatteryStateListener: jest.fn(() => ({ remove: jest.fn() })),
+  addLowPowerModeListener: jest.fn(() => ({ remove: jest.fn() })),
   BatteryState: { CHARGING: 2 },
 }));
 
@@ -116,6 +138,18 @@ jest.mock('expo-file-system', () => ({
   writeAsStringAsync: jest.fn().mockResolvedValue(),
   readAsStringAsync: jest.fn().mockResolvedValue('mocked logs'),
   EncodingType: { UTF8: 'utf8' },
+}));
+
+jest.mock('expo-file-system/legacy', () => ({
+  documentDirectory: 'file:///mock/doc/dir/',
+  getInfoAsync: jest.fn().mockResolvedValue({ exists: true, size: 32 }),
+  writeAsStringAsync: jest.fn().mockResolvedValue(),
+  readAsStringAsync: jest.fn().mockResolvedValue('mocked logs'),
+  deleteAsync: jest.fn().mockResolvedValue(),
+  moveAsync: jest.fn().mockResolvedValue(),
+  copyAsync: jest.fn().mockResolvedValue(),
+  makeDirectoryAsync: jest.fn().mockResolvedValue(),
+  EncodingType: { UTF8: 'utf8', Base64: 'base64' },
 }));
 
 jest.mock('expo-device', () => ({
@@ -139,3 +173,50 @@ jest.mock('react-native-safe-area-context', () => {
     useSafeAreaInsets: jest.fn().mockReturnValue(inset),
   };
 });
+
+jest.mock('expo-notifications', () => ({
+  setNotificationHandler: jest.fn(),
+  setNotificationChannelAsync: jest.fn().mockResolvedValue(null),
+  getPermissionsAsync: jest.fn().mockResolvedValue({ status: 'granted' }),
+  requestPermissionsAsync: jest.fn().mockResolvedValue({ status: 'granted' }),
+  cancelAllScheduledNotificationsAsync: jest.fn().mockResolvedValue(),
+  scheduleNotificationAsync: jest.fn().mockResolvedValue('notification-id'),
+  AndroidImportance: { DEFAULT: 3 },
+  SchedulableTriggerInputTypes: { DAILY: 'daily' },
+}));
+
+jest.mock('expo-linking', () => ({
+  createURL: jest.fn((path, options) => {
+    const query = options?.queryParams
+      ? `?${new URLSearchParams(options.queryParams).toString()}`
+      : '';
+    return `pockade:///${path.replace(/^\//, '')}${query}`;
+  }),
+  parse: jest.fn((url) => {
+    const parsed = new URL(url.replace('pockade:///', 'https://app/'));
+    return {
+      path: parsed.pathname.replace(/^\//, ''),
+      queryParams: Object.fromEntries(parsed.searchParams.entries()),
+    };
+  }),
+  getInitialURL: jest.fn().mockResolvedValue(null),
+  addEventListener: jest.fn(() => ({ remove: jest.fn() })),
+}));
+
+jest.mock('expo-system-ui', () => ({
+  setBackgroundColorAsync: jest.fn().mockResolvedValue(),
+}));
+
+jest.mock('expo-sharing', () => ({
+  isAvailableAsync: jest.fn().mockResolvedValue(true),
+  shareAsync: jest.fn().mockResolvedValue(),
+}));
+
+jest.mock('expo-document-picker', () => ({
+  getDocumentAsync: jest.fn().mockResolvedValue({
+    canceled: false,
+    assets: [{ uri: 'file:///mock/doc/dir/mocked_backup.pock' }]
+  }),
+}));
+
+jest.mock('react-native-quick-crypto', () => require('crypto'));

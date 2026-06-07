@@ -15,6 +15,9 @@ describe('themeStore', () => {
       performanceMode: false,
       audioEnabled: true,
       sfxEnabled: true,
+      hapticsEnabled: true,
+      notificationsEnabled: false,
+      colorBlindMode: 'off',
       isPerformanceMonitorVisible: false,
     });
   });
@@ -41,6 +44,18 @@ describe('themeStore', () => {
     useThemeStore.getState().setAudioEnabled(false);
     expect(useThemeStore.getState().audioEnabled).toBe(false);
     expect(mockStorage.set).toHaveBeenCalledWith('app.settings.audio', false);
+  });
+
+  it('setNotificationsEnabled updates state and persists to MMKV', () => {
+    useThemeStore.getState().setNotificationsEnabled(true);
+    expect(useThemeStore.getState().notificationsEnabled).toBe(true);
+    expect(mockStorage.set).toHaveBeenCalledWith('app.settings.notifications', true);
+  });
+
+  it('setColorBlindMode updates state and persists to MMKV', () => {
+    useThemeStore.getState().setColorBlindMode('deuteranopia');
+    expect(useThemeStore.getState().colorBlindMode).toBe('deuteranopia');
+    expect(mockStorage.set).toHaveBeenCalledWith('app.settings.color_blind_mode', 'deuteranopia');
   });
 
   it('setPerformanceMonitorVisible updates state and persists to MMKV', () => {

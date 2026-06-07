@@ -1,23 +1,43 @@
 import * as Haptics from 'expo-haptics';
+import { useThemeStore } from '../core/themeStore';
+
+function hapticsEnabled() {
+  return useThemeStore.getState().hapticsEnabled;
+}
 
 export const HapticBridge = {
-  selection: () => {
-    Haptics.selectionAsync().catch(() => {});
-  },
-  
-  lightTap: () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-  },
-  
-  heavyTap: () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {});
+  selection() {
+    if (!hapticsEnabled()) {
+      return;
+    }
+    Haptics.selectionAsync().catch(() => undefined);
   },
 
-  success: () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+  lightTap() {
+    if (!hapticsEnabled()) {
+      return;
+    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
   },
-  
-  error: () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-  }
+
+  heavyTap() {
+    if (!hapticsEnabled()) {
+      return;
+    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => undefined);
+  },
+
+  success() {
+    if (!hapticsEnabled()) {
+      return;
+    }
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+  },
+
+  error() {
+    if (!hapticsEnabled()) {
+      return;
+    }
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => undefined);
+  },
 };
